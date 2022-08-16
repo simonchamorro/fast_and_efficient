@@ -13,8 +13,10 @@ from pybullet_utils import bullet_client
 import time
 from typing import Tuple
 
-from src.robots import a1, go1
-from src.robots import a1_robot, go1_robot
+import sys
+sys.path.append("/home/simon/mila/go1_stuff/fast_and_efficient")
+from src.robots import go1
+from src.robots import go1_robot
 from src.robots.motors import MotorCommand
 
 flags.DEFINE_bool('use_real_robot', False, 'whether to use real robot.')
@@ -54,9 +56,9 @@ def main(_):
   p.setGravity(0.0, 0.0, -9.8)
 
   if FLAGS.use_real_robot:
-    robot = a1_robot.A1Robot(pybullet_client=p, sim_conf=get_sim_conf())
+    robot = go1_robot.Go1Robot(pybullet_client=p, sim_conf=get_sim_conf())
   else:
-    robot = a1.A1(pybullet_client=p, sim_conf=get_sim_conf())
+    robot = go1.Go1(pybullet_client=p, sim_conf=get_sim_conf())
   robot.reset()
 
   for _ in range(10000):

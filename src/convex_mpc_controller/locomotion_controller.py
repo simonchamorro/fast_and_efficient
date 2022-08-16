@@ -19,7 +19,7 @@ from src.convex_mpc_controller import raibert_swing_leg_controller
 from src.convex_mpc_controller import torque_stance_leg_controller_mpc
 from src.convex_mpc_controller.gait_configs import crawl, trot, flytrot
 from src.robots import go1
-from src.robots import a1_robot
+from src.robots import go1_robot
 from src.robots.motors import MotorCommand
 from src.robots.motors import MotorControlMode
 from src.worlds import abstract_world, plane_world
@@ -113,7 +113,7 @@ class LocomotionController(object):
 
     # Construct robot class:
     if self._use_real_robot:
-      self._robot = a1_robot.A1Robot(
+      self._robot = go1_robot.Go1Robot(
           pybullet_client=p,
           sim_conf=get_sim_conf(),
           motor_control_mode=MotorControlMode.HYBRID)

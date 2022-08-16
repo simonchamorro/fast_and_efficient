@@ -1,6 +1,7 @@
 """Real A1 robot class."""
 import ml_collections
 import numpy as np
+
 import robot_interface
 import time
 from typing import Any
@@ -17,6 +18,31 @@ COM_OFFSET = -np.array([0.012731, 0.002186, 0.000515])
 HIP_OFFSETS = np.array([[0.183, -0.047, 0.], [0.183, 0.047, 0.],
                         [-0.183, -0.047, 0.], [-0.183, 0.047, 0.]
                         ]) + COM_OFFSET
+
+class RobotInterface():
+  def __init__(self) -> None:
+    self.state = robot_interface.LowState()
+    self.cmd = robot_interface.LowCmd()
+    self.HIGHLEVEL = 0xEE
+    self.LOWLEVEL = 0xFF
+
+  def connect(self):
+    print("Connecting")
+    self.udp = robot_interface.UDP(self.LOWLEVEL, 8080, "192.168.123.10", 8007)
+    self.safe = robot_interface.Safety(robot_interface.LeggedType.Go1)
+    self.udp.InitCmdData(self.cmd)
+      
+  def send_command(self, command):
+    self.cmd = command
+    self.receive_observation()
+    self.safe.PowerProtect(self.cmd, self.state, 1)
+    self.udp.SetSend(self.cmd)
+    self.udp.Send()
+  
+  def receive_observation(self):
+    self.udp.Recv()
+    self.udp.GetRecv(self.state)
+    return self.state
 
 
 class Go1Robot(go1.Go1):
@@ -42,7 +68,10 @@ class Go1Robot(go1.Go1):
     self._raw_state = robot_interface.LowState()
     self._contact_force_threshold = np.zeros(4)
     # Send an initial zero command in order to receive state information.
-    self._robot_interface = robot_interface.RobotInterface(0xff)
+    # self._robot_interface = robot_interface.RobotInterface(0xff))
+    print("Creating robot interface")
+    self._robot_interface = RobotInterface()
+    self._robot_interface.connect()
     self._state_estimator = a1_robot_state_estimator.A1RobotStateEstimator(
         self)
     self._last_reset_time = time.time()
@@ -65,48 +94,66 @@ class Go1Robot(go1.Go1):
            motor_control_mode: MotorControlMode = None) -> None:
     self._step_counter += 1
     for _ in range(self._sim_conf.action_repeat):
-      self._apply_action(action, motor_control_mode)
+      # self._apply_action(action, motor_control_mode)
+      self._send_action(action)
       self._receive_observation()
       self._state_estimator.update(self._raw_state)
       self._update_contact_history()
+      
+  def _send_action(self, motor_cmd: MotorCommand) -> None:
+    for leg_idx in range(4):
+      for motor_idx in range(3):
+        self._robot_interface.cmd.motorCmd[leg_idx * 3 + motor_idx].q = motor_cmd.desired_position[leg_idx * 3 + motor_idx]
+        self._robot_interface.cmd.motorCmd[leg_idx * 3 + motor_idx].dq = 0
+        self._robot_interface.cmd.motorCmd[leg_idx * 3 + motor_idx].Kp = min(40, motor_cmd.kp[leg_idx * 3 + motor_idx])
+        self._robot_interface.cmd.motorCmd[leg_idx * 3 + motor_idx].Kd = motor_cmd.kd[leg_idx * 3 + motor_idx]
+        self._robot_interface.cmd.motorCmd[leg_idx * 3 + motor_idx].tau = 0
+    
+    self._robot_interface.send_command(self._robot_interface.cmd)
 
-  def _apply_action(self,
-                    action: MotorCommand,
-                    motor_control_mode: MotorControlMode = None) -> None:
-    """Clips and then apply the motor commands using the motor model.
-    Args:
-      action: np.array. Can be motor angles, torques, or hybrid commands.
-      motor_control_mode: A MotorControlMode enum.
-    """
-    if motor_control_mode is None:
-      motor_control_mode = self._motor_group.motor_control_mode
-    command = np.zeros(60, dtype=np.float32)
-    if motor_control_mode == MotorControlMode.POSITION:
-      for motor_id in range(self.num_motors):
-        command[motor_id * 5] = action.desired_position[motor_id]
-        command[motor_id * 5 + 1] = action.kp[motor_id]
-        command[motor_id * 5 + 3] = action.kd[motor_id]
-    elif motor_control_mode == MotorControlMode.TORQUE:
-      for motor_id in range(self.num_motors):
-        command[motor_id * 5 + 4] = action.desired_torque[motor_id]
-    elif motor_control_mode == MotorControlMode.HYBRID:
-      command[0::5] = action.desired_position
-      command[1::5] = action.kp
-      command[2::5] = action.desired_velocity
-      command[3::5] = action.kd
-      command[4::5] = action.desired_extra_torque
-    else:
-      raise ValueError('Unknown motor control mode for A1 robot: {}.'.format(
-          motor_control_mode))
+  # def _apply_action(self,
+  #                   action: MotorCommand,
+  #                   motor_control_mode: MotorControlMode = None) -> None:
+  #   """Clips and then apply the motor commands using the motor model.
+  #   Args:
+  #     action: np.array. Can be motor angles, torques, or hybrid commands.
+  #     motor_control_mode: A MotorControlMode enum.
+  #   """
+  #   if motor_control_mode is None:
+  #     motor_control_mode = self._motor_group.motor_control_mode
+  #   command = np.zeros(60, dtype=np.float32)
+  #   if motor_control_mode == MotorControlMode.POSITION:
+  #     for motor_id in range(self.num_motors):
+  #       command[motor_id * 5] = action.desired_position[motor_id]
+  #       command[motor_id * 5 + 1] = action.kp[motor_id]
+  #       command[motor_id * 5 + 3] = action.kd[motor_id]
+  #   elif motor_control_mode == MotorControlMode.TORQUE:
+  #     for motor_id in range(self.num_motors):
+  #       command[motor_id * 5 + 4] = action.desired_torque[motor_id]
+  #   elif motor_control_mode == MotorControlMode.HYBRID:
+  #     command[0::5] = action.desired_position
+  #     command[1::5] = action.kp
+  #     command[2::5] = action.desired_velocity
+  #     command[3::5] = action.kd
+  #     command[4::5] = action.desired_extra_torque
+  #   else:
+  #     raise ValueError('Unknown motor control mode for A1 robot: {}.'.format(
+  #         motor_control_mode))
 
-    self._robot_interface.send_command(command)
+  #   self._robot_interface.send_command(command)
 
   def reset(self, hard_reset: bool = False, reset_time=1.5):
     """Reset the robot to default motor angles."""
     super(Go1Robot, self).reset(hard_reset, num_reset_steps=0)
-    for _ in range(10):
-      self._robot_interface.send_command(np.zeros(60, dtype=np.float32))
-      time.sleep(0.001)
+    home_pos = self._robot_interface.cmd
+    pos = [-0.1, 0.8, -1.5, 0.1, 0.8, -1.5, -0.1, 0.8, -1.5, 0.1, 0.8, -1.5] + [0] * 48
+    for i, x in enumerate(home_pos.motorCmd):
+      x.q = pos[i]
+      x.Kp = 5.0 
+    for _ in range(100):
+      # self._robot_interface.send_command(np.zeros(60, dtype=np.float32))
+      self._robot_interface.send_command(home_pos)
+      time.sleep(0.01)
       self._receive_observation()
 
     print("About to reset the robot.")
