@@ -1,4 +1,4 @@
-"""Example of running A1 robot with position control.
+"""Example of running A1/Go1 robot with position control.
 
 To run:
 python -m src.robots.a1_robot_exercise_example.py
@@ -13,8 +13,8 @@ from pybullet_utils import bullet_client
 import time
 from typing import Tuple
 
-from src.robots import a1
-from src.robots import a1_robot
+from src.robots import a1, go1
+from src.robots import a1_robot, go1_robot
 from src.robots.motors import MotorCommand
 
 flags.DEFINE_bool('use_real_robot', False, 'whether to use real robot.')
@@ -54,9 +54,9 @@ def main(_):
   p.setGravity(0.0, 0.0, -9.8)
 
   if FLAGS.use_real_robot:
-    robot = a1_robot.A1Robot(pybullet_client=p, sim_conf=get_sim_conf())
+    robot = go1_robot.Go1Robot(pybullet_client=p, sim_conf=get_sim_conf())
   else:
-    robot = a1.A1(pybullet_client=p, sim_conf=get_sim_conf())
+    robot = go1.Go1(pybullet_client=p, sim_conf=get_sim_conf())
   robot.reset()
 
   for _ in range(10000):
