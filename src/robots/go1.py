@@ -47,7 +47,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=1,
         ),
         MotorModel(
@@ -60,7 +60,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -73,7 +73,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -86,7 +86,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=1,
         ),
         MotorModel(
@@ -99,7 +99,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -112,7 +112,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -125,7 +125,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=1,
         ),
         MotorModel(
@@ -138,7 +138,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -151,7 +151,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -164,7 +164,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=1,
         ),
         MotorModel(
@@ -177,7 +177,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
         MotorModel(
@@ -190,7 +190,7 @@ class Go1(Robot):
             max_velocity=16,
             min_torque=-33.5,
             max_torque=33.5,
-            kp=100,
+            kp=40,
             kd=2,
         ),
     ))
