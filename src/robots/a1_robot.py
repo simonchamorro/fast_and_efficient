@@ -18,6 +18,17 @@ HIP_OFFSETS = np.array([[0.183, -0.047, 0.], [0.183, 0.047, 0.],
                         ]) + COM_OFFSET
 
 
+class SlidingWindowSmoothing():
+  def __init__(self, n=3):
+    self.values = [0]*n
+  
+  def add(self, value):
+    self.values = self.values[1:] + [value]
+
+  def read(self):
+    return np.mean(self.values, axis=0)
+
+    
 class A1Robot(a1.A1):
   """Class for interfacing with A1 hardware."""
   def __init__(
@@ -45,6 +56,8 @@ class A1Robot(a1.A1):
     self._state_estimator = a1_robot_state_estimator.A1RobotStateEstimator(
         self)
     self._last_reset_time = time.time()
+    self.ang_vel_filter = SlidingWindowSmoothing(n=10)
+    self.motor_vel_filter = SlidingWindowSmoothing(n=10)
 
     super(A1Robot, self).__init__(pybullet_client, sim_conf, urdf_path,
                                   base_joint_names, foot_joint_names,
@@ -58,6 +71,9 @@ class A1Robot(a1.A1):
     is mutable. So we need to copy the value out.
     """
     self._raw_state = self._robot_interface.receive_observation()
+    motor_vel = np.array([motor.dq for motor in self._raw_state.motorState[:12]])
+    self.motor_vel_filter.add(motor_vel)
+    self.ang_vel_filter.add(self._raw_state.imu.gyroscope)
 
   def step(self,
            action: MotorCommand,
@@ -181,7 +197,7 @@ class A1Robot(a1.A1):
 
   @property
   def motor_velocities(self):
-    return np.array([motor.dq for motor in self._raw_state.motorState[:12]])
+    return self.motor_vel_filter.read()
 
   @property
   def motor_torques(self):
@@ -190,7 +206,7 @@ class A1Robot(a1.A1):
 
   @property
   def base_angular_velocity_body_frame(self):
-    return np.array(self._raw_state.imu.gyroscope)
+    return np.array(self.ang_vel_filter.read())
 
   @property
   def foot_positions_in_base_frame(self):
